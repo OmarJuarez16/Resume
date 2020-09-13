@@ -163,7 +163,7 @@ def main():
     
     #---------------------------------------------------------------------------
     # Normal training 
-    Dense_model = DenseNet()
+    Dense_model = DenseNet(3)
     Dense_model.to(device)
     optimizer = optim.SGD(Dense_model.parameters(), lr=0.1 , momentum = 0.9, weight_decay=1e-4, nesterov = True)
     loss_fn = nn.CrossEntropyLoss().cuda()
@@ -202,7 +202,7 @@ def main():
 
     ##---------------------------------------------------------------------------
     # Adversarial training - PGD-7
-    Dense_model_PGD7 = DenseNet()
+    Dense_model_PGD7 = DenseNet(3)
     Dense_model_PGD7.to(device)
     optimizer = optim.SGD(Dense_model_PGD7.parameters(), lr=0.1 , momentum = 0.9, weight_decay=1e-4, nesterov = True)
     loss_fn = nn.CrossEntropyLoss().cuda()
