@@ -1,5 +1,7 @@
 # SURE Program Experience
 
+The codes in this branch show the normal and adversarial training of models in the RGB and HSV space using DenseNet and ResNet models in Pytorch.  
+
 Knowledge that was acquired: 
  * Pytorch and Kornia library 
  * Adversarial training
