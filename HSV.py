@@ -13,7 +13,8 @@ author: OmarJuarez16
 
 
 # Importing libraries
-from models import *
+from Models import *
+from Attack import * 
 import torch
 from torchvision import transforms, datasets
 import torch.nn as nn
@@ -30,6 +31,73 @@ from barbar import Bar
 from math import pi 
 
 
+def eval_against_adv(testset, model, eps):
+    total = 0
+    acc = 0
+    model.eval()
+    n_correct = 0
+    n_samples = 0
+    n_class_correct = [0 for i in range(10)]
+    n_class_samples = [0 for i in range(10)]
+   
+    for index, (feature, labels) in enumerate(Bar(testset)):
+      x, y = feature.to(device), labels.to(device) 
+
+      hsv = rgb_to_hsv(x)                                   # HSV transform
+      hsv[:, 0, :, :] = hsv[:, 0, :, :] / (pi * 2)          # Normalize Hue channel
+      delta_hsv = pgd_linf(model, hsv, y, eps, mode="Test") # Obtain HSV-attack
+      hsv[:, 0, :, :] = hsv[:, 0, :, :] * (pi * 2)          # Return Hue channel range 
+      new_rgb = hsv_to_rgb(hsv + delta_hsv)                 # RGB attacked image
+      delta_rgb = new_rgb - x                               # Resulting delta for RGB
+      final_delta = delta_rgb.clamp(-eps, eps)              # Clamping the delta
+      final_hsv = rgb_to_hsv(x + final_delta)               # Resulting HSV image
+      final_hsv[:, 0, :, :] = final_hsv[:, 0, :, :] / (pi * 2)
+
+      outputs = model(final_hsv.float())
+      
+      _, predicted = torch.max(outputs, 1)
+      n_samples += labels.size(0)
+
+      n_correct += (predicted.cpu() == labels).sum().item()
+     
+      for i in range(len(labels)):
+        
+        label = labels[i]
+        pred = predicted[i]
+      acc = n_correct / n_samples
+      print('This is the accuracy: ', acc)
+
+    return acc
+
+
+def epoch_adversarial(loader, model, attack, opt=None, **kwargs):
+    total_loss, total_err = 0.,0.
+    i = 0
+    for x,y in Bar(loader):
+        x, y = x.to(device), y.to(device)
+        hsv = rgb_to_hsv(x)                           # HSV transform
+        hsv[:, 0, :, :] = hsv[:, 0, :, :] / (pi * 2)  # Normalize Hue channel
+        delta_hsv = attack(model, hsv, y, **kwargs)   # Obtain HSV-attack
+        hsv[:, 0, :, :] = hsv[:, 0, :, :] * (pi * 2)  # Return Hue channel range 
+        new_rgb = hsv_to_rgb(hsv + delta_hsv)         # RGB attacked image
+        delta_rgb = new_rgb - x                       # Resulting delta for RGB
+        final_delta = delta_rgb.clamp(-8/255, 8/255)  # Clamping the delta
+        final_hsv = rgb_to_hsv(x + final_delta)       # Resulting HSV image
+        final_hsv[:, 0, :, :] = final_hsv[:, 0, :, :] / (pi * 2)  # Normalizing
+
+        yp = model(final_hsv.float())
+        loss = nn.CrossEntropyLoss()(yp,y)
+        if opt:
+            opt.zero_grad()
+            loss.backward()
+            opt.step()
+      
+        total_err += (yp.max(dim=1)[1] != y).sum().item()
+        total_loss += loss.item() * x.shape[0]
+        i += 1
+    return total_err / len(loader.dataset), total_loss / len(loader.dataset)
+
+
 def train_model(mode, dataset, dataloader, model, criterion, optimizer, trn_loss = [], trn_accuracy = [], tst_loss = [], tst_accuracy = []):
     
     if mode == 'train':
@@ -40,7 +108,7 @@ def train_model(mode, dataset, dataloader, model, criterion, optimizer, trn_loss
     cost = correct = 0
 
     for index, (feature, label) in enumerate(Bar(dataloader)):
-      x, y = feature.cuda(), label.cuda() 
+      x, y = feature.to(device), label.to(device) 
       x = rgb_to_hsv(x)
       x[:, 0, :, :] = x[:, 0, :, :] / (pi * 2)
       output = model(x.float())  
@@ -90,7 +158,7 @@ def main():
 
     # Classes of CIFAR-10 
     classes = ('plane', 'car', 'bird', 'cat', 'deer', 'dog', 'frog', 'horse', 'ship', 'truck')
-    
+    global device
     device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
     
     #---------------------------------------------------------------------------
@@ -175,11 +243,10 @@ def main():
       np.savetxt(mother_path + "test_accuracy_PGD7.csv", test_accuracy_PGD7, delimiter=",")
     
     ##---------------------------------------------------------------------------
-    ## In this section, the models are evaluated
-
+    ## In this section, the model is evaluated
+    
     Dense_model_PGD7.eval()      
-    #pgd_attack_range = [0/255, 5/255, 10/255, 15/255, 20/255, 25/255, 30/255]
-    pgd_attack_range = [30/255]
+    pgd_attack_range = [0/255, 5/255, 10/255, 15/255, 20/255, 25/255, 30/255]
     acurracy = []
 
     for eps in pgd_attack_range: 
