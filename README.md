@@ -1,5 +1,5 @@
 # Resume
 
 Branches: 
-  * SURE Program
-  * GMF Consultores
+  * SURE-Program
+  * GMF-Consultores
