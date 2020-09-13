@@ -6,3 +6,4 @@ Knowledge that was acquired:
  * PGD Attack
  * Mounting Google Drive
  * Use of GPU
+ * Research of state-of-the-art networks (DenseNets and ResNets)
