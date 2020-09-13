@@ -1,2 +1,2 @@
 from .resnet import * 
-from .desnet import * 
+from .densenet import * 
