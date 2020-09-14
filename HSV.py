@@ -112,7 +112,7 @@ def train_model(mode, dataset, dataloader, model, criterion, optimizer, trn_loss
       x = rgb_to_hsv(x)
       x[:, 0, :, :] = x[:, 0, :, :] / (pi * 2)
       output = model(x.float())  
-      y = torch.flatten(y).type(torch.LongTensor).cuda()
+      y = torch.flatten(y).type(torch.LongTensor).to(device)
 
       loss = criterion(output, y)  
 
@@ -122,7 +122,7 @@ def train_model(mode, dataset, dataloader, model, criterion, optimizer, trn_loss
         optimizer.zero_grad() 
 
       cost += loss.item() * feature.shape[0]
-      correct += (output.argmax(1) == label.cuda()).sum().item()
+      correct += (output.argmax(1) == label.to(device)).sum().item()
     
     cost = cost / len(dataset) 
     acc = correct / len(dataset)
@@ -166,7 +166,7 @@ def main():
     Dense_model = DenseNet(3)
     Dense_model.to(device)
     optimizer = optim.SGD(Dense_model.parameters(), lr=0.1 , momentum = 0.9, weight_decay=1e-4, nesterov = True)
-    loss_fn = nn.CrossEntropyLoss().cuda()
+    loss_fn = nn.CrossEntropyLoss().to(device)
     
     global mother_path
     mother_path = ''  # Here goes the directory where you have all the files related to the training and testing. 
@@ -205,7 +205,7 @@ def main():
     Dense_model_PGD7 = DenseNet(3)
     Dense_model_PGD7.to(device)
     optimizer = optim.SGD(Dense_model_PGD7.parameters(), lr=0.1 , momentum = 0.9, weight_decay=1e-4, nesterov = True)
-    loss_fn = nn.CrossEntropyLoss().cuda()
+    loss_fn = nn.CrossEntropyLoss().to(device)
 
     train_loss_PGD7 = []
     train_accuracy_PGD7 = []
