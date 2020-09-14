@@ -250,7 +250,7 @@ def main():
     acurracy = []
 
     for eps in pgd_attack_range: 
-      acurracy.append(eval_against_adv(testset, Dense_model_PGD7, eps=eps, alpha=2.5*eps/100, n_iter=100))
+      acurracy.append(eval_against_adv(testset, Dense_model_PGD7, eps=eps))
     
     plt.figure(figsize=(15,10))
     plt.title('$L_{\inf}$-bounded adversary')
