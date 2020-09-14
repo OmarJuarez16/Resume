@@ -28,7 +28,7 @@ from torch.utils.data import TensorDataset, DataLoader
 from barbar import Bar
 
 
-def eval_against_adv(testset, model, eps):
+def eval_against_adv(testset, model, eps):  # Evaluates model against adversarial attacks. 
     total = 0
     acc = 0
     model.eval()
@@ -58,7 +58,7 @@ def eval_against_adv(testset, model, eps):
     return acc
 
 
-def train_model(mode, dataset, dataloader, model, criterion, optimizer, trn_loss = [], trn_accuracy = [], tst_loss = [], tst_accuracy = []):
+def train_model(mode, dataset, dataloader, model, criterion, optimizer, trn_loss = [], trn_accuracy = [], tst_loss = [], tst_accuracy = []):  # Trains the model. 
     
     if mode == 'train':
       model.train()
@@ -102,7 +102,7 @@ def train_model(mode, dataset, dataloader, model, criterion, optimizer, trn_loss
       return tst_loss, tst_accuracy  
 
     
-def epoch_adversarial(loader, model, attack, opt=None, **kwargs):
+def epoch_adversarial(loader, model, attack, opt=None, **kwargs):  # Trains the adversarial model. 
     total_loss, total_err = 0.,0.
     for X,y in Bar(loader):
         X, y = X.to(device), y.to(device)
@@ -121,16 +121,17 @@ def epoch_adversarial(loader, model, attack, opt=None, **kwargs):
 
 def main():
 
+    # Transformations
     transform_train = transforms.Compose([
     transforms.RandomCrop(32, padding=4),
     transforms.RandomHorizontalFlip(),
     transforms.ToTensor(),
     transforms.Normalize((0.4914, 0.4822, 0.4465), (0.2023, 0.1994, 0.2010))])
-
     transform_test = transforms.Compose([
     transforms.ToTensor(),
     transforms.Normalize((0.4914, 0.4822, 0.4465), (0.2023, 0.1994, 0.2010))])
-
+    
+    # Datasets
     train = datasets.CIFAR10(root='./data', train=True, download=True, transform=transform_train)  # Training dataset
     test = datasets.CIFAR10(root='./data', train=False, download=True, transform=transform_test)  # Test dataset
     
@@ -148,19 +149,23 @@ def main():
     #---------------------------------------------------------------------------
     # Normal training 
     
+    # Model & parameters 
     Resnet_model = ResNet(BasicBlock, [2, 2, 2, 2], 3)
     Resnet_model.to(device)
     optimizer = optim.SGD(Resnet_model.parameters(), lr=0.1 , momentum = 0.9, weight_decay=1e-4, nesterov = True)
     loss_fn = nn.CrossEntropyLoss().to(device)
 
+    # Directory to files 
     global mother_path
     mother_path = ''  # Here goes the directory where you have all the files related to the training and testing. 
     
+    # Performance lists 
     train_loss = []
     train_accuracy = []
     test_loss = []
     test_accuracy = []
 
+    # Extract existing files if any
     if os.path.isfile(mother_path + "Model_PGD0.pth"):
       print('Extracting pre-trained base model...')
       Resnet_model.load_state_dict(torch.load(mother_path + "Model_PGD0.pth"))  # Read the pre-trained model
@@ -168,7 +173,8 @@ def main():
       train_accuracy = np.genfromtxt(mother_path + "train_accuracy_PGD0.csv", delimiter=",").tolist()
       test_loss = np.genfromtxt(mother_path + "test_loss_PGD0.csv", delimiter=",").tolist()
       test_accuracy = np.genfromtxt(mother_path + "test_accuracy_PGD0.csv", delimiter=",").tolist()
-
+    
+    # Call the training function and save the progress
     while len(train_loss) < 15:
         print('Generating base model...')
         train_loss, train_accuracy = train_model('train', train, trainset, Resnet_model, loss_fn, optimizer, trn_loss = train_loss, trn_accuracy = train_accuracy)
@@ -182,18 +188,23 @@ def main():
           print('Training loss: ', train_loss[-1], ', and this is the accuracy:', train_accuracy[-1])
           print('Test loss: ', test_loss[-1], ', and this is the accuracy:', test_accuracy[-1])
 
+          
     ##---------------------------------------------------------------------------
     # Adversarial training - PGD-7
+    
+    # Model & parameters 
     Resnet_model_PGD7 = ResNet(BasicBlock, [2, 2, 2, 2])
     Resnet_model_PGD7.to(device)
     optimizer = optim.SGD(Resnet_model_PGD7.parameters(), lr=0.1 , momentum = 0.9, weight_decay=1e-4, nesterov = True) 
     loss_fn = nn.CrossEntropyLoss().to(device)
-
+    
+    # Performance lists 
     train_loss_PGD7 = []
     train_accuracy_PGD7 = []
     test_loss_PGD7 = []
     test_accuracy_PGD7 = []
 
+    # Extract existing files if any
     if os.path.isfile(mother_path + "Model_PGD7.pth"):
       print('Extracting pre-trained base model...')
       Resnet_model_PGD7.load_state_dict(torch.load(mother_path + "Model_PGD7.pth"))  # Read the pre-trained model
@@ -201,7 +212,8 @@ def main():
       train_accuracy_PGD7 = np.genfromtxt(mother_path + "train_accuracy_PGD7.csv", delimiter=",").tolist()
       test_loss_PGD7 = np.genfromtxt(mother_path + "test_loss_PGD7.csv", delimiter=",").tolist()
       test_accuracy_PGD7 = np.genfromtxt(mother_path + "test_accuracy_PGD7.csv", delimiter=",").tolist()
-
+    
+    # Call the training function and save the progress
     while len(test_loss_PGD7) < 20: 
       train_err, train_loss = epoch_adversarial(trainset, Resnet_model_PGD7, pgd_linf, optimizer)
       adv_err, adv_loss = epoch_adversarial(testset, Resnet_model_PGD7, pgd_linf)
@@ -222,14 +234,17 @@ def main():
     
     ##---------------------------------------------------------------------------
     ## In this section, the models are evaluated
-
+    
+    # Evaluation parameters 
     Resnet_model_PGD7.eval()      
     pgd_attack_range = [0, 5/255, 10/255, 15/255, 20/255, 25/255, 30/255]
     acurracy = []
 
+    # Calling the evaluation function
     for eps in pgd_attack_range: 
       acurracy.append(eval_against_adv(testset, Resnet_model_PGD7, eps=eps))
     
+    # Plotting the accuracy of the adversarial model 
     plt.figure(figsize=(15,10))
     plt.title('$L_{\inf}$-bounded adversary')
     plt.plot(pgd_attack_range, acurracy, label='CIELAB PGD-7')
