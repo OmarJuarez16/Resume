@@ -1,5 +1,6 @@
 # Resume
 
 Branches: 
-  * SURE-Program
-  * GMF-Consultores
+  * SURE-Program: UMICH
+  * Grape-Phenotyping: UDEM
+  * Dashboard: GMF-Consultores
