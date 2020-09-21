@@ -44,14 +44,17 @@ def stitch(left_image, right_image):  # Stitching through OpenCV SIFT (Scale-Inv
         src_pts = np.float32([kp1[m.queryIdx].pt for m in good]).reshape(-1, 1, 2)  # Coordinates of the points in the original plane
         dst_pts = np.float32([kp2[m.trainIdx].pt for m in good]).reshape(-1, 1, 2)  # Coordinates of the points in the target plane
         M, mask = cv.findHomography(src_pts, dst_pts, cv.RANSAC, 5.0)  # Homography between both planes through RANSAC method and a threshold of 5
-        h, w = left_gray.shape
+        
+        # The next lines is to determine where is the region of homography
+        h, w = left_gray.shape  
         pts = np.float32([[0, 0], [0, h - 1], [w - 1, h - 1], [w - 1, 0]]).reshape(-1, 1, 2)
-        dst = cv.perspectiveTransform(pts, M)
-        img2 = cv.polylines(right_gray, [np.int32(dst)], True, 255, 3, cv.LINE_AA)
+        dst = cv.perspectiveTransform(pts, M)  # Determines where is the area of homography
+        img2 = cv.polylines(right_gray, [np.int32(dst)], True, 255, 3, cv.LINE_AA) # Displays a bounding box with the area of interest
+        
     else:
         print('Not enough matches are founded, increase the distance please.')
 
-    dst = cv.warpPerspective(left_image, M, (right_image.shape[1] + left_image.shape[1], right_image.shape[0]))
+    dst = cv.warpPerspective(left_image, M, (right_image.shape[1] + left_image.shape[1], right_image.shape[0]))  # Warp the image 
     dst[0:right_image.shape[0], 0:right_image.shape[1]] = right_image
     return dst, img2
 
