@@ -18,22 +18,22 @@ import matplotlib.pyplot as plt
 class NeuralNetwork(object):
     def __init__(self):
         # Parameters
-        self.inputSize = 3  # Number of inputs
-        self.outputSize = 1  # Number of outputs
-        self.hiddenSize = 3  # Number of neurons in hidden layer
+        self.inputSize = _  # Write the number of inputs
+        self.outputSize = _  # Write the number of outputs
+        self.hiddenSize = _  # Write the number of neurons in hidden layer
 
         # Weights
-        self.W1 = np.random.randn(self.inputSize, self.hiddenSize)  # (3, 3) weight matrix
-        self.W2 = np.random.randn(self.hiddenSize, self.outputSize)  # (3, 1) weight matrix
+        self.W1 = np.random.randn(self.inputSize, self.hiddenSize)  # (_, _) weight matrix
+        self.W2 = np.random.randn(self.hiddenSize, self.outputSize)  # (_, _) weight matrix
 
         # Learning rate
-        self.lr = 0.000001
+        self.lr = _ # Write the desired learning rate 
 
     def feedForward(self, x):  # Forward propagation for the network
         self.z = np.dot(x, self.W1)  # Dot product of input 'x' and first set of weights
         self.z2 = self.sigmoid(self.z)  # Activation function
-        self.z3 = np.dot(self.z2, self.W2)  # Dot product of hidden layer (z2) and second set of weights (3x1)
-        output = self.sigmoid(self.z3)
+        self.z3 = np.dot(self.z2, self.W2)  # Dot product of hidden layer (z2) and second set of weights (_x_)
+        output = self.sigmoid(self.z3)  # Activation function
         return output
 
     def cost_function(self, prediction, target):  # Calculates cost function
@@ -85,8 +85,7 @@ def feature_scaling(feature, mean, std):  # Feature scaling using Z-score normal
 
 def main():
     # Define input data
-    #file_name = 'Dataset_Completo/Entrenamiento.csv'
-    file_name = 'Dataset_Completo/CSV/Training.csv'
+    file_name = '..' # .csv file
     n_data, features, r, g, b, training_outputs = lecture_csv(filename=file_name)
     x = np.stack([b, g, r], axis=1)
     y = np.reshape(training_outputs, (np.shape(training_outputs)[0], 1))
@@ -101,10 +100,10 @@ def main():
 
     nn = NeuralNetwork()  # Calling Neural Network class.
     cf = []
-    stop_error = 0.001
-    error = 100
-    for i in range(100000000000):  # Iterations for Neural Network
-        w1, w2, output = nn.train(x, y)  # w1 -> (3x3) & w2 -> (3x1)
+    stop_error = _  # Write the limit where it will stop training
+    error = 1
+    for i in range(_):  # Write the number of iterations for the NN
+        w1, w2, output = nn.train(x, y) 
         cf = np.append(cf, nn.cost_function(output, y))
         if np.shape(cf)[0] > 1:
             error = np.abs(cf[-1] - cf[-2])
