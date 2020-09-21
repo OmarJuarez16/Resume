@@ -23,26 +23,27 @@ def stitch(left_image, right_image):  # Stitching through OpenCV SIFT (Scale-Inv
     
     left_gray = cv.cvtColor(left_image, cv.COLOR_BGR2GRAY)
     right_gray = cv.cvtColor(right_image, cv.COLOR_BGR2GRAY)
-    sift = cv.xfeatures2d.SIFT_create()
-    kp1, des1 = sift.detectAndCompute(left_gray, None)
-    kp2, des2 = sift.detectAndCompute(right_gray, None)
+    sift = cv.xfeatures2d.SIFT_create()  # Call Sift class
+    kp1, des1 = sift.detectAndCompute(left_gray, None)  # Find key points in left image
+    kp2, des2 = sift.detectAndCompute(right_gray, None)  # Find key points in right image 
 
-    match = cv.BFMatcher()
-    matches = match.knnMatch(des1, des2, k=2)
+    match = cv.BFMatcher()  # Call Matcher class
+    matches = match.knnMatch(des1, des2, k=2)  # Match the key points with KNN
 
-    good = []
-    for m, n in matches:
+    good = []  # List for collecting matches
+    for m, n in matches:  # Loop to determine through a threshold whether is or isn't a desired match. 
         if m.distance < 0.6*n.distance:
             good.append(m)
+    
+    # Next two lines are for visualizing the matches. 
+    # draw_params = dict(matchColor=(0, 255, 0), singlePointColor=None, flags=2)
+    # img_matching_features = cv.drawMatches(left_image, kp1, right_image, kp2, good, None, **draw_params)
 
-    draw_params = dict(matchColor=(0, 255, 0), singlePointColor=None, flags=2)
-    img_matching_features = cv.drawMatches(left_image, kp1, right_image, kp2, good, None, **draw_params)
-
-    min_match_count = 10
+    min_match_count = 10  # Threshold of minimum matches  
     if len(good) > min_match_count:
-        src_pts = np.float32([kp1[m.queryIdx].pt for m in good]).reshape(-1, 1, 2)
-        dst_pts = np.float32([kp2[m.trainIdx].pt for m in good]).reshape(-1, 1, 2)
-        M, mask = cv.findHomography(src_pts, dst_pts, cv.RANSAC, 5.0)
+        src_pts = np.float32([kp1[m.queryIdx].pt for m in good]).reshape(-1, 1, 2)  # Coordinates of the points in the original plane
+        dst_pts = np.float32([kp2[m.trainIdx].pt for m in good]).reshape(-1, 1, 2)  # Coordinates of the points in the target plane
+        M, mask = cv.findHomography(src_pts, dst_pts, cv.RANSAC, 5.0)  # Homography between both planes through RANSAC method and a threshold of 5
         h, w = left_gray.shape
         pts = np.float32([[0, 0], [0, h - 1], [w - 1, h - 1], [w - 1, 0]]).reshape(-1, 1, 2)
         dst = cv.perspectiveTransform(pts, M)
@@ -73,10 +74,13 @@ def main():
   right_image, left_image = read_images(directory)
   image, _ = stitch(left_image, right_image)
   
-  # ... 
+  # Display image 
+  cv.imshow("Stitched image", trim(dst))
+  cv.waitkey(0)
+  cv.destroyAllWindows() 
+  # Save image
+  cv.imwrite("NAME-OF-IMAGE", trim(dst))
   
   
-
-
 if __name__ == "__main__":
     main()
