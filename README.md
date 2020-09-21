@@ -1,6 +1,8 @@
-# Resume
+# Precision Agriculture - Grape Cluster Phenotyping
 
-Branches: 
-  * SURE-Program: UMICH
-  * Grape-Phenotyping: UDEM
-  * Dashboard: GMF-Consultores
+The codes presented in this branch are related to computer vision and artificial intelligence. 
+
+Knowledge that was acquired: 
+ * Numpy, Pandas, Matplotlib, OpenCV, Argparse  
+ * Stereo Vision
+ * Feedforward Neural Networks
